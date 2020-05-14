@@ -1,89 +1,145 @@
-# typescript-nuxtjs-boilerplate
-
-## Requirements
+## 前提
 
 * Node.js 12.x
-* Yarn v1.x
+* java 1.8 以上
+* awscli
 
-### VSCodeで入れて欲しいプラグイン
-VSCodeで開発する場合は以下のプラグインを入れておくことをオススメします。  
+## 環境構築
 
-+ [MarkDown All in One](https://marketplace.visualstudio.com/items?itemName=yzhang.markdown-all-in-one)
-+ [Code Spell Checker](https://marketplace.visualstudio.com/items?itemName=streetsidesoftware.code-spell-checker)
-+ [Vetur](https://marketplace.visualstudio.com/items?itemName=octref.vetur)
-+ [editorconfig](https://marketplace.visualstudio.com/items?itemName=EditorConfig.EditorConfig)
-+ [eslint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)
-+ [stylelint-plus](https://marketplace.visualstudio.com/items?itemName=hex-ci.stylelint-plus)
-
-## Development Server
-
-開発サーバーを起動するには、次のコマンドを実行します。
-
-```shell script
-$ yarn dev
+CLIのインストール
+```
+$ npm install -g @aws-amplify/cli
 ```
 
-http://localhost:4000 もしくは ローカルIPの4000番ポート で開発サーバーが起動します。
-
-起動ポートは次のように指定することで変更できます。
-
-```shell script
-$ NUXT_PORT=4001 yarn dev
+[この辺を参考に](https://amplify-sns.workshop.aws/00_prerequisites/20_install_and_configs.html)、設定はよしなに
+```
+$ amplify configure
 ```
 
-## Build
+今回は実装済みのモジュールを動かします
+```
+$ git clone git@github.com:ishizukayusuke/amplify-demo.git
+$ cd amplify-demo
 
-Nuxtアプリをビルドします。
-そして、ビルドされたNuxtアプリを起動します。
-
-```shell script
-$ yarn build
-$ yarn start
+# nuxt課題がベースなのでyarn
+$ yarn
 ```
 
-## 本番向けビルド
+## amplify触ってみる
 
-Dockerコンテナを作り、その中でNuxtアプリをビルド・起動します。
+### 初期化
+初期化。既存のモジュール使っているので、設定はいろいろ省略されるかも
+```
+$ amplify init
 
-```shell script
-$ docker build .
+Note: It is recommended to run this command from the root of your app directory
+? Do you want to use an existing environment? → No
+? Enter a name for the project → amplify
+? Enter a name for the environment → production
+? Choose yourY default editor: → None
+? Choose the type of app that you're building → javascript
+
+Please tell us about your project
+
+? What javascript framework are you using → none
+? Source Directory Path: → src (デフォルト)
+? Distribution Directory Path: → dist (デフォルト)
+? Build Command: → npm run-script build (デフォルト)
+? Start Command: → npm run-script start (デフォルト)
+? Do you want to use an AWS profile? → Yes
+? Please choose the profile you want to use → default
 ```
 
-ローカルで `docker-compose` してDockerの挙動を試す場合は以下コマンドを実行してください。
+### 認証の追加
+Cognitoが裏で動いている
+```
+$ amplify add auth
 
-```shell script
-$ yarn docker-compose
+Do you want to use the default authentication and security configuration? → Default configuration
+
+How do you want users to be able to sign in? → Username
+
+Do you want to configure advanced settings? → No, I am done.
+
+Successfully added resource amplify9fbdb8f1 locally
+
 ```
 
-http://localhost:4000/ でコンテナ内で起動されたNuxtサーバーにアクセスできます。
+```
+$ amplify status
 
-## 環境変数
+Current Environment: production
 
-### `$ yarn dev` 時の環境変数の流れ
+| Category | Resource name   | Operation | Provider plugin   |
+| -------- | --------------- | --------- | ----------------- |
+| Auth     | amplify9fbdb8f1 | Create    | awscloudformation |
+```
 
-`nuxt.config.ts` → `.vue`で`process.env`参照
+クラウドへの反映。
+```
+$ amplify push
+Do you want to update code for your updated GraphQL API → No
+```
 
-### `$ yarn docker-compose` 時の環境変数の流れ
+これはいらんかも。
+```
+$ yarn add  aws-amplify aws-amplify-vue graphql
+```
 
-`docker-compose.env` →️ `nuxt.config.ts` → `.vue`で`process.env`参照
+### API追加
 
-※ こちらは本番では使われません。ローカルでの確認用です。
+```
+$ amplify add api
 
-### 本番環境 `ECS` での環境変数の流れ
+Scanning for plugins...
+Plugin scan successful
+? Please select from one of the below mentioned services: → GraphQL
+? Provide API name: → ArticleGql
+? Choose the default authorization type for the API → Amazon Cognito User Pool
+Use a Cognito user pool configured as a part of this project.
+? Do you want to configure advanced settings for the GraphQL API → No, I am done
+.
+? Do you have an annotated GraphQL schema? → No
+? Do you want a guided schema creation? → No
+? Provide a custom type name → Article
+```
 
-`ECSで設定された環境変数` →️ `nuxt.config.ts` → `.vue`で`process.env`参照
+一から作った場合、↓のタイミングで  
+「.amplify/backend/schema.graphql (モデル定義)」  
+「ingerfaces/api/API.ts (リクエスト・レスポンスオブジェクト的な)」  
+が生成される
 
+```
+$ amplify mock api
 
+? Choose the code generation language target → typescript
+? Enter the file name pattern of graphql queries, mutations and subscriptions
+src/graphql/**/*.ts → src/graphql/**/*.ts
+? Do you want to generate/update all possible GraphQL operations - queries, mu
+tations and subscriptions → Yes
+? Enter maximum statement depth [increase from default if your schema is deepl
+y nested] → 3
+? Enter the file name for the generated code → src/interfaces/api/API.ts
+? Do you want to generate code for your newly created GraphQL API → Yes
+```
 
-## npm-scripts
+一から作った場合、↓のタイミングで  
+「./graphql/**.ts (クエリ)」  
+```
+$ amplify push
 
-|Script|Summary|
-|:---:|:---|
-|`dev`|Nuxtの開発サーバーを起動します|
-|`build`|Nuxtアプリをビルドします|
-|`start`|ビルドされたNuxtアプリを起動します|
-|`docker-compose`|docker-composeします。Dockerの挙動を確認する用です|
-|`lintjs`|ESLintチェックを実行します|
-|`lintjs:fix`|ESLintのチェック＋自動修正を実行します|
-|`lintcss`|stylelintチェックを実行します|
-|`lintcss:fix`|stylelintのチェック＋自動修正を実行します|
+? Do you want to update code for your updated GraphQL API → Yes
+? Do you want to generate GraphQL statements (queries, mutations and subscript
+ion) based on your schema types?
+This will overwrite your current graphql queries, mutations and subscriptions → No
+```
+
+ログインから試してみましょう
+```
+http://localhost:4000/signin
+```
+
+気が済んだら作成したリソースを削除しましょう
+```
+$ amplify delete
+```

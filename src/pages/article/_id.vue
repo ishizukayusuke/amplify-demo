@@ -11,7 +11,9 @@ import { Context } from '@nuxt/types';
 import { Component, Vue } from 'nuxt-property-decorator';
 import { IArticle } from '@/interfaces/api/Article';
  
-@Component
+@Component({
+  middleware: 'auth'
+})
 export default class ArticleDetail extends Vue {
   public article!: IArticle;
   

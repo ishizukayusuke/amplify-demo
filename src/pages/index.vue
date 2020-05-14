@@ -12,6 +12,7 @@ import { Component, Vue } from 'nuxt-property-decorator';
 import ArticleList from '@/components/pages/index/articleList.vue';
  
 @Component({
+  middleware: 'auth',
   components: {
     ArticleList,
   },

@@ -1,0 +1,13 @@
+type Article
+  @model
+  @auth(rules: [
+    {allow: owner, ownerField:"owner", provider: userPools, operations:[create]}
+	])
+{
+  type: String!
+  id: ID
+  title: String!
+  body: String!
+  owner: String
+  timestamp: AWSTimestamp!
+}
